@@ -1,0 +1,11 @@
+package typelevel-emptiness-collections
+version = 0.1.0
+authors = "Denis Buzdalov"
+license = "Apache-2.0"
+brief = "Collections with type-level control of emptiness, e.g. generalisation of List and List1"
+
+sourcedir = "src"
+
+depends = if-unsolved-implicit
+
+modules = Data.CheckedEmpty.List

@@ -1,0 +1,8 @@
+[install]
+whitelist = [ "typelevel-emptiness-collections-tests" ]
+
+[custom.all.typelevel-emptiness-collections]
+type = "local"
+path = "."
+ipkg = "typelevel-emptiness-collections.ipkg"
+test = "tests/tests.ipkg"
