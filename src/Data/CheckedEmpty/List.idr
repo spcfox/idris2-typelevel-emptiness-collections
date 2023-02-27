@@ -36,7 +36,7 @@ length []      = Z
 length (_::xs) = S $ length xs
 
 public export
-(++) : L'st nel a -> Lazy (L'st ner a) -> L'st (nel || ner) a
+(++) : L'st nel a -> L'st ner a -> L'st (nel || ner) a
 []      ++ ys = ys
 (x::xs) ++ ys = x :: xs ++ ys
 
@@ -48,6 +48,32 @@ public export
 Monoid (L'st0 a) where
   neutral = []
 
+--- Creation ---
+
+public export
+iterateN : (n : Nat) -> (a -> a) -> a -> L'st (n /= 0) a
+iterateN Z     _ x = []
+iterateN (S n) f x = x :: iterateN n f x
+
+public export
+replicate : (n : Nat) -> a -> L'st (n /= 0) a
+replicate Z     _ = []
+replicate (S k) x = x :: replicate k x
+
+covering
+public export
+iterate : (a -> Maybe a) -> a -> L'st0 a
+iterate f x = x :: case f x of
+  Nothing => []
+  Just y  => iterate f y
+
+covering
+public export
+unfoldr : (b -> Maybe (a, b)) -> b -> L'st0 a
+unfoldr f c = case f c of
+  Nothing     => []
+  Just (a, n) => a :: unfoldr f n
+
 --- Internal conversions ---
 
 -- Relaxation --
@@ -57,7 +83,7 @@ relaxF : L'st ne a -> L'st0 a
 relaxF []      = []
 relaxF (x::xs) = x::xs
 
-public export
+public export %inline
 relaxT : L'st1 a -> L'st ne a
 relaxT (x::xs) = x::xs
 
@@ -65,6 +91,10 @@ public export
 relaxAnd : L'st ne a -> L'st (ne && nx) a
 relaxAnd []      = []
 relaxAnd (x::xs) = x::xs
+
+%transform "relaxF=id"   relaxF   {ne} {a} = believe_me (\x => the (L'st ne a) x)
+%transform "relaxT=id"   relaxT   {ne} {a} = believe_me (\x => the (L'st ne a) x)
+%transform "relaxAnd=id" relaxAnd {ne} {a} = believe_me (\x => the (L'st ne a) x)
 
 -- Strengthening --
 
@@ -92,29 +122,29 @@ namespace NEHeteroOps
     rewrite sym $ orSameNeutral ner
     relaxAnd $ f x ++ (assert_smaller wh nxs `bind` f)
 
-  export
+  export %inline
   bind' : L'st nel a -> L'st ner b -> L'st (nel && ner) b
   bind' xs ys = xs `bind` \_ => ys
 
-  export
+  export %inline
   join' : L'st nel (L'st ner a) -> L'st (nel && ner) a
   join' xs = xs `bind` id
 
-  export
+  export %inline
   ap : L'st nel (a -> b) -> L'st ner a -> L'st (nel && ner) b
   ap xs ys = xs `bind` (<$> ys)
 
-public export
+public export %inline
 Applicative (L'st ne) where
   pure x = [x]
   xs <*> ys = rewrite sym $ andSameNeutral ne in xs `ap` ys
 
-public export
-Alternative (L'st0) where
+public export %inline
+Alternative L'st0 where
   empty = []
-  (<|>) = (++)
+  xs <|> ys = xs ++ ys
 
-public export
+public export %inline
 Monad (L'st ne) where
   xs >>= f = rewrite sym $ andSameNeutral ne in xs `bind` f
 
@@ -154,12 +184,31 @@ public export
 init' : L'st ne a -> Maybe $ L'st0 a
 init' = map init . strengthen
 
---- Folds ---
+--- Sublisting ---
 
 public export
-foldrLazy : (op : a -> Lazy b -> b) -> (init : Lazy b) -> L'st ne a -> b
-foldrLazy _  init []      = init
-foldrLazy op init (x::xs) = x `op` foldrLazy op init xs
+take : (n : Nat) -> L'st ne a -> L'st (ne && n /= 0) a
+take Z     _       = rewrite andFalseFalse ne in []
+take _     []      = []
+take (S k) (x::xs) = x :: take k xs
+
+public export
+drop : (n : Nat) -> L'st ne a -> L'st0 a
+drop Z     xs      = relaxF xs
+drop (S _) []      = []
+drop (S n) (_::xs) = drop n $ relaxF xs
+
+public export
+takeWhile : (a -> Bool) -> L'st ne a -> L'st0 a
+takeWhile p []      = []
+takeWhile p (x::xs) = if p x then x :: takeWhile p xs else []
+
+public export
+dropWhile : (a -> Bool) -> L'st ne a -> L'st0 a
+dropWhile p []      = []
+dropWhile p (x::xs) = if p x then dropWhile p xs else x::xs
+
+--- Folds ---
 
 export
 Foldable (L'st ne) where
