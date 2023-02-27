@@ -11,35 +11,41 @@ import public Language.Implicits.IfUnsolved
 --- Types definitions ---
 
 public export
-data CEList : (definitelyNotEmpty : Bool) -> Type -> Type where
-  Nil  : CEList False a
+data L'st : (definitelyNotEmpty : Bool) -> Type -> Type where
+  Nil  : L'st False a
   (::) : (0 _ : True `IfUnsolved` ine) => (0 _ : True `IfUnsolved` ne) =>
-         a -> CEList ine a -> CEList ne a
+         a -> L'st ine a -> L'st ne a
 
-%name CEList xs, ys, zs
+%name L'st xs, ys, zs
+
+||| An alias for a list that definitely may be empty.
+||| Don't use this if you can be polymorphic on the boolean type argument.
+public export %inline
+L'st0 : Type -> Type
+L'st0 = L'st False
 
 public export %inline
-NEList : Type -> Type
-NEList = CEList True
+L'st1 : Type -> Type
+L'st1 = L'st True
 
 --- Basic functions ---
 
 public export
-length : CEList ne a -> Nat
+length : L'st ne a -> Nat
 length []      = Z
 length (_::xs) = S $ length xs
 
 public export
-(++) : CEList nel a -> Lazy (CEList ner a) -> CEList (nel || ner) a
+(++) : L'st nel a -> Lazy (L'st ner a) -> L'st (nel || ner) a
 []      ++ ys = ys
 (x::xs) ++ ys = x :: xs ++ ys
 
 public export
-Semigroup (CEList ne a) where
+Semigroup (L'st ne a) where
   xs <+> ys = rewrite sym $ orSameNeutral ne in xs ++ ys
 
 public export
-Monoid (CEList False a) where
+Monoid (L'st0 a) where
   neutral = []
 
 --- Internal conversions ---
@@ -47,37 +53,37 @@ Monoid (CEList False a) where
 -- Relaxation --
 
 public export
-relaxF : CEList ne a -> CEList False a
+relaxF : L'st ne a -> L'st0 a
 relaxF []      = []
 relaxF (x::xs) = x::xs
 
 public export
-relaxT : NEList a -> CEList ne a
+relaxT : L'st1 a -> L'st ne a
 relaxT (x::xs) = x::xs
 
 public export
-relaxAnd : CEList ne a -> CEList (ne && nx) a
+relaxAnd : L'st ne a -> L'st (ne && nx) a
 relaxAnd []      = []
 relaxAnd (x::xs) = x::xs
 
 -- Strengthening --
 
 public export
-strengthen : CEList ne a -> Maybe $ NEList a
+strengthen : L'st ne a -> Maybe $ L'st1 a
 strengthen []      = Nothing
 strengthen (x::xs) = Just $ x::xs
 
 --- Functor ---
 
 public export
-Functor (CEList ne) where
+Functor (L'st ne) where
   map f []      = []
   map f (x::xs) = f x :: map f xs
 
 namespace NEHeteroOps
 
   export
-  bind : CEList nel a -> (a -> CEList ner b) -> CEList (nel && ner) b
+  bind : L'st nel a -> (a -> L'st ner b) -> L'st (nel && ner) b
   bind [] _ = []
   bind wh@(x::xs) f = do
     rewrite andCommutative nel ner
@@ -87,76 +93,76 @@ namespace NEHeteroOps
     relaxAnd $ f x ++ (assert_smaller wh nxs `bind` f)
 
   export
-  bind' : CEList nel a -> CEList ner b -> CEList (nel && ner) b
+  bind' : L'st nel a -> L'st ner b -> L'st (nel && ner) b
   bind' xs ys = xs `bind` \_ => ys
 
   export
-  join' : CEList nel (CEList ner a) -> CEList (nel && ner) a
+  join' : L'st nel (L'st ner a) -> L'st (nel && ner) a
   join' xs = xs `bind` id
 
   export
-  ap : CEList nel (a -> b) -> CEList ner a -> CEList (nel && ner) b
+  ap : L'st nel (a -> b) -> L'st ner a -> L'st (nel && ner) b
   ap xs ys = xs `bind` (<$> ys)
 
 public export
-Applicative (CEList ne) where
+Applicative (L'st ne) where
   pure x = [x]
   xs <*> ys = rewrite sym $ andSameNeutral ne in xs `ap` ys
 
 public export
-Alternative (CEList False) where
+Alternative (L'st0) where
   empty = []
   (<|>) = (++)
 
 public export
-Monad (CEList ne) where
+Monad (L'st ne) where
   xs >>= f = rewrite sym $ andSameNeutral ne in xs `bind` f
 
 --- Picking ---
 
 public export
-head : NEList a -> a
+head : L'st1 a -> a
 head (x::_) = x
 
 public export
-head' : CEList ne a -> Maybe a
+head' : L'st ne a -> Maybe a
 head' = map head . strengthen
 
 public export
-tail : NEList a -> CEList False a
+tail : L'st1 a -> L'st0 a
 tail (_::xs) = relaxF xs
 
 public export
-tail' : CEList ne a -> Maybe $ CEList False a
+tail' : L'st ne a -> Maybe $ L'st0 a
 tail' = map tail . strengthen
 
 public export
-last : NEList a -> a
+last : L'st1 a -> a
 last [x]     = x
 last wh@(_::(y::ys)) = last $ assert_smaller wh $ y::ys
 
 public export
-last' : CEList ne a -> Maybe a
+last' : L'st ne a -> Maybe a
 last' = map last . strengthen
 
 public export
-init : NEList a -> CEList False a
+init : L'st1 a -> L'st0 a
 init [x] = []
 init wh@(x::(y::ys)) = x :: init (assert_smaller wh $ y::ys)
 
 public export
-init' : CEList ne a -> Maybe $ CEList False a
+init' : L'st ne a -> Maybe $ L'st0 a
 init' = map init . strengthen
 
 --- Folds ---
 
 public export
-foldrLazy : (op : a -> Lazy b -> b) -> (init : Lazy b) -> CEList ne a -> b
+foldrLazy : (op : a -> Lazy b -> b) -> (init : Lazy b) -> L'st ne a -> b
 foldrLazy _  init []      = init
 foldrLazy op init (x::xs) = x `op` foldrLazy op init xs
 
 export
-Foldable (CEList ne) where
+Foldable (L'st ne) where
   foldr c n []      = n
   foldr c n (x::xs) = c x (foldr c n xs)
 
@@ -172,23 +178,23 @@ Foldable (CEList ne) where
   foldMap f = foldl (\acc, elem => acc <+> f elem) neutral
 
 export
-foldl1 : (a -> a -> a) -> NEList a -> a
+foldl1 : (a -> a -> a) -> L'st1 a -> a
 foldl1 f (x::xs) = foldl f x xs
 
 export
-Traversable (CEList ne) where
+Traversable (L'st ne) where
   traverse f []      = pure []
   traverse f (x::xs) = [| f x :: traverse f xs |]
 
 --- Filtering ---
 
 export
-filter : (a -> Bool) -> CEList ne a -> CEList False a
+filter : (a -> Bool) -> L'st ne a -> L'st0 a
 filter _ []      = []
 filter f (x::xs) = if f x then x :: filter f xs else filter f xs
 
 export
-mapMaybe : (a -> Maybe b) -> CEList ne a -> CEList False b
+mapMaybe : (a -> Maybe b) -> L'st ne a -> L'st0 b
 mapMaybe _ [] = []
 mapMaybe f (x::xs) = case f x of
                        Just y  => y :: mapMaybe f xs
@@ -199,64 +205,64 @@ mapMaybe f (x::xs) = case f x of
 -- List --
 
 public export
-fromList : (xs : List a) -> CEList (not $ null xs) a
+fromList : (xs : List a) -> L'st (not $ null xs) a
 fromList []      = []
 fromList (x::xs) = x :: fromList xs
 
 public export
-Cast (List a) (CEList False a) where
+Cast (List a) (L'st0 a) where
   cast xs = relaxF $ fromList xs
 
 -- List1 --
 
 public export
-fromList1 : List1 a -> NEList a
+fromList1 : List1 a -> L'st1 a
 fromList1 $ x:::xs = x :: fromList xs
 
 public export
-toList1 : NEList a -> List1 a
+toList1 : L'st1 a -> List1 a
 toList1 $ x::xs = x ::: toList xs
 
 public export
-Cast (List1 a) (CEList True a) where
+Cast (List1 a) (L'st True a) where
   cast = fromList1
 
 public export
-Cast (CEList True a) (List1 a) where
+Cast (L'st True a) (List1 a) where
   cast = toList1
 
 -- Vect --
 
 public export
-fromVect : Vect n a -> CEList (n /= Z) a
+fromVect : Vect n a -> L'st (n /= Z) a
 fromVect []      = []
 fromVect (x::xs) = x :: fromVect xs
 
 public export
-Cast (Vect n a) (CEList (n /= Z) a) where
+Cast (Vect n a) (L'st (n /= Z) a) where
   cast = fromVect
 
 --- Showing ---
 
 export
-Show a => Show (CEList ne a) where
+Show a => Show (L'st ne a) where
   show = show . toList
 
 --- Reversing ---
 
 public export
-reverse : CEList ne a -> CEList ne a
+reverse : L'st ne a -> L'st ne a
 reverse []      = []
 reverse (x::xs) = foldl (flip (::)) [x] xs
 
 --- Properties ---
 
 export
-mapFusion : (g : b -> c) -> (f : a -> b) -> (xs : CEList ne a) -> map g (map f xs) = map (g . f) xs
+mapFusion : (g : b -> c) -> (f : a -> b) -> (xs : L'st ne a) -> map g (map f xs) = map (g . f) xs
 mapFusion g f []      = Refl
 mapFusion g f (x::xs) = rewrite mapFusion g f xs in Refl
 
 export
-mapExt : (xs : CEList ne _) -> ((x : _) -> f x = g x) -> map f xs = map g xs
+mapExt : (xs : L'st ne _) -> ((x : _) -> f x = g x) -> map f xs = map g xs
 mapExt []      _  = Refl
 mapExt (x::xs) fg = rewrite fg x in cong (g x ::) $ mapExt _ fg
