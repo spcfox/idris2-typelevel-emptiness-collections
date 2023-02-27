@@ -7,5 +7,7 @@ brief = "Collections with type-level control of emptiness, e.g. generalisation o
 sourcedir = "src"
 
 depends = if-unsolved-implicit
+        , contrib -- only for `Data.List.Lazy`
 
 modules = Data.CheckedEmpty.List
+        , Data.CheckedEmpty.List.Lazy

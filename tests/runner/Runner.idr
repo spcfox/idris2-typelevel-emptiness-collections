@@ -11,4 +11,5 @@ main : IO ()
 main = goldenRunner
   [ "Musthave typechecks"           `atDir` "typechecks"
   , "Documentation"                 `atDir` "docs"
+  , "Laziness of a list"            `atDir` "laziness"
   ]

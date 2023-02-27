@@ -1,0 +1,10 @@
+initial ll
+after addition 1
+initial llf from 0
+intermediate
+after stringificationn:0'
+after stringificationn:0''
+after stringificationn:0'''
+after stringificationn:0''''
+after stringificationn:0'''''
+["n:0", "n:0'", "n:0''", "n:0'''", "n:0''''"]
