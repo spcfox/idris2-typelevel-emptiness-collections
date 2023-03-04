@@ -4,10 +4,10 @@ import Data.CheckedEmpty.List.Lazy
 
 import Debug.Trace
 
-foldlM' : Monad m => (fm : b -> a -> m b) -> (init : b) -> LazyL'st ne a -> m b
+foldlM' : Monad m => (fm : b -> a -> m b) -> (init : b) -> LazyLst ne a -> m b
 foldlM' fm init xs = foldrLazy (\x, k, z => fm z x >>= k) pure xs init
 
-l : LazyL'st1 Nat
+l : LazyLst1 Nat
 l = (\n => trace "gen \{show n}" n) <$> iterateN 10000 S Z
 
 -- Both should be actually short-cutting (i.e., not many `gen *` should be printed)

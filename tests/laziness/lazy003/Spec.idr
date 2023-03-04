@@ -4,10 +4,10 @@ import Data.CheckedEmpty.List.Lazy
 
 import Debug.Trace
 
-ll : LazyL'st1 Nat
+ll : LazyLst1 Nat
 ll = iterateN 10000 (traceValBy (("after addition " ++) . show) . S) (trace "initial ll" Z)
 
-llf : Nat -> LazyL'st1 String
+llf : Nat -> LazyLst1 String
 llf st = iterateN 10000 (traceValBy ("after stringification" ++) . (++ "'")) (trace "initial llf from \{show st}" "n:\{show st}")
 
 main : IO ()
