@@ -1,5 +1,7 @@
 module Data.CheckedEmpty.List.Lazy
 
+import Control.Function
+
 import Data.Bool
 import Data.List.Lazy
 
@@ -313,6 +315,33 @@ export
   show (x::_) = "\{show x} :: <lazy>"
 
 --- Properties ---
+
+-- type itself, inhabitance --
+
+export
+{0 xs : LazyLst _ _} -> {0 uns0 : _} -> {0 uns1 : _} ->
+Uninhabited ([] = (::) @{uns0} @{uns1} x xs) where
+  uninhabited Refl impossible
+
+export
+{0 xs : LazyLst _ _} -> {0 uns0 : _} -> {0 uns1 : _} ->
+Uninhabited ((::) @{uns0} @{uns1} x xs = []) where
+  uninhabited Refl impossible
+
+-- If either head or tail is not propositionally equal, conses are not propositionally equal
+export
+{0 xs : LazyLst _ _} ->
+{0 unsL0 : _} -> {0 unsL1 : _} ->
+{0 unsR0 : _} -> {0 unsR1 : _} ->
+Either (Uninhabited $ x === y) (Uninhabited $ xs === ys) =>
+Uninhabited ((::) @{unsL0} @{unsL1} x xs === (::) @{unsR0} @{unsR1} y ys) where
+  uninhabited @{Left  z} Refl = uninhabited @{z} Refl
+  uninhabited @{Right z} Refl = uninhabited @{z} Refl
+
+-- type itself, constructors --
+
+Biinjective (with CheckedEmpty.List.Lazy.(::) \x, y => x :: y) where
+  biinjective Refl = (Refl, Refl)
 
 export
 mapFusion : (g : b -> c) -> (f : a -> b) -> (xs : LazyLst ne a) -> map g (map f xs) = map (g . f) xs
