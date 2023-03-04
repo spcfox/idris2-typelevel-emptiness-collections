@@ -4,6 +4,7 @@ import Control.Function
 
 import Data.Bool
 import Data.List.Lazy
+import Data.Fin
 
 import public Language.Implicits.IfUnsolved
 
@@ -36,6 +37,10 @@ length : LazyLst ne a -> Nat
 length []      = Z
 length (_::xs) = S $ length xs
 
+public export %inline
+(.length) : LazyLst ne a -> Nat
+xs.length = length xs
+
 public export
 (++) : LazyLst nel a -> Lazy (LazyLst ner a) -> LazyLst (nel || ner) a
 []      ++ ys = ys
@@ -48,6 +53,15 @@ Semigroup (LazyLst ne a) where
 public export
 Monoid (LazyLst0 a) where
   neutral = []
+
+public export
+index' : (xs : LazyLst ne a) -> Fin xs.length -> a
+index' (x::_ ) FZ     = x
+index' (_::xs) (FS i) = index' xs i
+
+public export %inline
+index : Fin n -> (xs : LazyLst ne a) -> (0 _ : n = xs.length) => a
+index i xs @{Refl} = index' xs i
 
 --- Creation ---
 

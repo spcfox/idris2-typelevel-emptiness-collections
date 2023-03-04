@@ -35,6 +35,10 @@ length : Lst ne a -> Nat
 length []      = Z
 length (_::xs) = S $ length xs
 
+public export %inline
+(.length) : Lst ne a -> Nat
+xs.length = length xs
+
 public export
 (++) : Lst nel a -> Lst ner a -> Lst (nel || ner) a
 []      ++ ys = ys
@@ -47,6 +51,15 @@ Semigroup (Lst ne a) where
 public export
 Monoid (Lst0 a) where
   neutral = []
+
+public export
+index' : (xs : Lst ne a) -> Fin xs.length -> a
+index' (x::_ ) FZ     = x
+index' (_::xs) (FS i) = index' xs i
+
+public export %inline
+index : Fin n -> (xs : Lst ne a) -> (0 _ : n = xs.length) => a
+index i xs @{Refl} = index' xs i
 
 --- Creation ---
 
