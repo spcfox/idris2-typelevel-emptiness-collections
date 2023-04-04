@@ -197,6 +197,32 @@ public export
 init' : Lst ne a -> Maybe $ Lst0 a
 init' = map init . strengthen
 
+-- Returns the longest first
+public export
+tails : Lst ne a -> Lst1 $ Lst0 a
+tails []          = [ [] ]
+tails xxs@(x::xs) = relaxF xxs :: tails (assert_smaller xxs xs)
+
+-- Returns the longest first
+public export
+tails1 : (0 _ : IfUnsolved ne True) => Lst1 a -> Lst1 $ Lst ne a
+tails1 xxs = relaxT xxs :: case strengthen $ tail xxs of
+  Nothing => []
+  Just xs => relaxF $ tails1 $ assert_smaller xxs xs
+
+-- Returns the shortest first
+public export
+inits : Lst ne a -> Lst1 $ Lst0 a
+inits []      = [ [] ]
+inits (x::xs) = [] :: ((x::) <$> inits xs)
+
+-- Returns the shortest first
+public export
+inits1 : (0 _ : IfUnsolved ne True) => Lst1 a -> Lst1 $ Lst ne a
+inits1 xxs@(x::xs) = case strengthen xs of
+  Nothing  => [ [x] ]
+  Just xs' => [x] :: ((x::) <$> inits1 (assert_smaller xxs xs'))
+
 --- Sublisting ---
 
 public export
