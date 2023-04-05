@@ -164,6 +164,53 @@ public export %inline
 Monad (LazyLst ne) where
   xs >>= f = rewrite sym $ andSameNeutral ne in xs `bind` f
 
+--- Folds ---
+
+public export
+foldrLazy : (op : a -> Lazy b -> b) -> (init : Lazy b) -> LazyLst ne a -> b
+foldrLazy _  init []      = init
+foldrLazy op init (x::xs) = x `op` foldrLazy op init xs
+
+export
+Foldable (LazyLst ne) where
+  foldr c n []      = n
+  foldr c n (x::xs) = c x (foldr c n xs)
+
+  foldl f q []      = q
+  foldl f q (x::xs) = foldl f (f q x) xs
+
+  null []     = True
+  null (_::_) = False
+
+  foldlM op init []      = pure init
+  foldlM op init (x::xs) = op init x >>= \next => foldlM op next xs
+
+  toList []      = []
+  toList (x::xs) = x :: toList xs
+
+  foldMap f = foldl (\acc, elem => acc <+> f elem) neutral
+
+export
+foldl1 : (a -> a -> a) -> LazyLst1 a -> a
+foldl1 f (x::xs) = foldl f x xs
+
+export
+foldr1 : (a -> Lazy a -> a) -> LazyLst1 a -> a
+foldr1 op [x] = x
+foldr1 op (x::xs@(y::ys)) = op x $ foldr1 op $ assert_smaller xs (y::ys)
+
+public export
+traverse_ : Monad m => (a -> m b) -> LazyLst ne a -> m Unit
+traverse_ f = foldrLazy ((>>) . ignore . f) (pure ())
+
+public export %inline
+for_ : Monad m => LazyLst ne a -> (a -> m b) -> m Unit
+for_ = flip Lazy.traverse_
+
+public export %inline
+sequence_ : Monad m => LazyLst ne (m a) -> m Unit
+sequence_ = Lazy.traverse_ id
+
 --- Picking ---
 
 public export
@@ -249,53 +296,6 @@ public export
 dropWhile : (a -> Bool) -> LazyLst ne a -> LazyLst0 a
 dropWhile p []      = []
 dropWhile p (x::xs) = if p x then dropWhile p xs else x::xs
-
---- Folds ---
-
-public export
-foldrLazy : (op : a -> Lazy b -> b) -> (init : Lazy b) -> LazyLst ne a -> b
-foldrLazy _  init []      = init
-foldrLazy op init (x::xs) = x `op` foldrLazy op init xs
-
-export
-Foldable (LazyLst ne) where
-  foldr c n []      = n
-  foldr c n (x::xs) = c x (foldr c n xs)
-
-  foldl f q []      = q
-  foldl f q (x::xs) = foldl f (f q x) xs
-
-  null []     = True
-  null (_::_) = False
-
-  foldlM op init []      = pure init
-  foldlM op init (x::xs) = op init x >>= \next => foldlM op next xs
-
-  toList []      = []
-  toList (x::xs) = x :: toList xs
-
-  foldMap f = foldl (\acc, elem => acc <+> f elem) neutral
-
-export
-foldl1 : (a -> a -> a) -> LazyLst1 a -> a
-foldl1 f (x::xs) = foldl f x xs
-
-export
-foldr1 : (a -> Lazy a -> a) -> LazyLst1 a -> a
-foldr1 op [x] = x
-foldr1 op (x::xs@(y::ys)) = op x $ foldr1 op $ assert_smaller xs (y::ys)
-
-public export
-traverse_ : Monad m => (a -> m b) -> LazyLst ne a -> m Unit
-traverse_ f = foldrLazy ((>>) . ignore . f) (pure ())
-
-public export %inline
-for_ : Monad m => LazyLst ne a -> (a -> m b) -> m Unit
-for_ = flip Lazy.traverse_
-
-public export %inline
-sequence_ : Monad m => LazyLst ne (m a) -> m Unit
-sequence_ = Lazy.traverse_ id
 
 --- Zippings ---
 

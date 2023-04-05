@@ -162,6 +162,40 @@ public export %inline
 Monad (Lst ne) where
   xs >>= f = rewrite sym $ andSameNeutral ne in xs `bind` f
 
+--- Folds ---
+
+export
+Foldable (Lst ne) where
+  foldr c n []      = n
+  foldr c n (x::xs) = c x (foldr c n xs)
+
+  foldl f q []      = q
+  foldl f q (x::xs) = foldl f (f q x) xs
+
+  null []     = True
+  null (_::_) = False
+
+  toList []      = []
+  toList (x::xs) = x :: toList xs
+
+  foldMap f = foldl (\acc, elem => acc <+> f elem) neutral
+
+export
+foldl1 : (a -> a -> a) -> Lst1 a -> a
+foldl1 f (x::xs) = foldl f x xs
+
+export
+Traversable (Lst ne) where
+  traverse f []      = pure []
+  traverse f (x::xs) = [| f x :: traverse f xs |]
+
+--- Reversing ---
+
+public export
+reverse : Lst ne a -> Lst ne a
+reverse []      = []
+reverse (x::xs) = foldl (flip (::)) [x] xs
+
 --- Picking ---
 
 public export
@@ -247,33 +281,6 @@ public export
 dropWhile : (a -> Bool) -> Lst ne a -> Lst0 a
 dropWhile p []      = []
 dropWhile p (x::xs) = if p x then dropWhile p xs else x::xs
-
---- Folds ---
-
-export
-Foldable (Lst ne) where
-  foldr c n []      = n
-  foldr c n (x::xs) = c x (foldr c n xs)
-
-  foldl f q []      = q
-  foldl f q (x::xs) = foldl f (f q x) xs
-
-  null []     = True
-  null (_::_) = False
-
-  toList []      = []
-  toList (x::xs) = x :: toList xs
-
-  foldMap f = foldl (\acc, elem => acc <+> f elem) neutral
-
-export
-foldl1 : (a -> a -> a) -> Lst1 a -> a
-foldl1 f (x::xs) = foldl f x xs
-
-export
-Traversable (Lst ne) where
-  traverse f []      = pure []
-  traverse f (x::xs) = [| f x :: traverse f xs |]
 
 --- Zippings ---
 
@@ -370,13 +377,6 @@ Cast (Vect n a) (Lst (n /= Z) a) where
 export
 Show a => Show (Lst ne a) where
   show = show . toList
-
---- Reversing ---
-
-public export
-reverse : Lst ne a -> Lst ne a
-reverse []      = []
-reverse (x::xs) = foldl (flip (::)) [x] xs
 
 --- Properties ---
 
