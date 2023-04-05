@@ -3,6 +3,7 @@ module Data.CheckedEmpty.List
 import Data.Bool
 import Data.List1
 import Data.Vect
+import Data.Zippable
 
 import public Language.Implicits.IfUnsolved
 
@@ -273,6 +274,40 @@ export
 Traversable (Lst ne) where
   traverse f []      = pure []
   traverse f (x::xs) = [| f x :: traverse f xs |]
+
+--- Zippings ---
+
+export
+Zippable (Lst ne) where
+  zipWith _ [] _ = []
+  zipWith _ _ [] = []
+  zipWith f xxs@((x::xs) @{_} @{ine}) (y::ys) = (f x y :: zipWith f (assert_smaller xxs $ relaxF xs) (relaxF ys)) @{%search} @{ine}
+
+  zipWith3 _ [] _ _ = []
+  zipWith3 _ _ [] _ = []
+  zipWith3 _ _ _ [] = []
+  zipWith3 f xxs@((x::xs) @{_} @{ine}) (y::ys) (z::zs) = (f x y z :: zipWith3 f (assert_smaller xxs $ relaxF xs) (relaxF ys) (relaxF zs)) @{%search} @{ine}
+
+  unzipWith f [] = ([], [])
+  unzipWith f (x::xs) = do
+    let (y, z) = f x
+    let (ys, zs) = unzipWith f xs
+    (y::ys, z::zs)
+
+  unzipWith3 f [] = ([], [], [])
+  unzipWith3 f (x::xs) = do
+    let (a, b, c) = f x
+    let (as, bs, cs) = unzipWith3 f xs
+    (a::as, b::bs, c::cs)
+
+export
+zipWithStream : (a -> b -> c) -> Stream a -> Lst ne b -> Lst ne c
+zipWithStream _ _       []      = []
+zipWithStream f (x::xs) (y::ys) = f x y :: zipWithStream f xs ys
+
+export %inline
+zipStream : Stream a -> Lst ne b -> Lst ne (a, b)
+zipStream = zipWithStream (,)
 
 --- Filtering ---
 

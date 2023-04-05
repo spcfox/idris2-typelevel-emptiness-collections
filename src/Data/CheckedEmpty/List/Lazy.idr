@@ -5,6 +5,7 @@ import Control.Function
 import Data.Bool
 import Data.List.Lazy
 import Data.Fin
+import Data.Zippable
 
 import public Language.Implicits.IfUnsolved
 
@@ -295,6 +296,31 @@ for_ = flip Lazy.traverse_
 public export %inline
 sequence_ : Monad m => LazyLst ne (m a) -> m Unit
 sequence_ = Lazy.traverse_ id
+
+--- Zippings ---
+
+export
+Zippable (LazyLst ne) where
+  zipWith _ [] _ = []
+  zipWith _ _ [] = []
+  zipWith f xxs@((x::xs) @{_} @{ine}) (y::ys) = (f x y :: zipWith f (assert_smaller xxs $ relaxF xs) (relaxF ys)) @{%search} @{ine}
+
+  zipWith3 _ [] _ _ = []
+  zipWith3 _ _ [] _ = []
+  zipWith3 _ _ _ [] = []
+  zipWith3 f xxs@((x::xs) @{_} @{ine}) (y::ys) (z::zs) = (f x y z :: zipWith3 f (assert_smaller xxs $ relaxF xs) (relaxF ys) (relaxF zs)) @{%search} @{ine}
+
+  unzipWith  f xs = (xs <&> fst . f, xs <&> snd . f)
+  unzipWith3 f xs = (xs <&> fst . f, xs <&> fst . snd . f, xs <&> snd . snd . f)
+
+export
+zipWithStream : (a -> b -> c) -> Stream a -> LazyLst ne b -> LazyLst ne c
+zipWithStream _ _       []      = []
+zipWithStream f (x::xs) (y::ys) = f x y :: zipWithStream f xs ys
+
+export %inline
+zipStream : Stream a -> LazyLst ne b -> LazyLst ne (a, b)
+zipStream = zipWithStream (,)
 
 --- Filtering ---
 
