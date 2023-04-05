@@ -205,10 +205,11 @@ tails xxs@(x::xs) = relaxF xxs :: tails (assert_smaller xxs xs)
 
 -- Returns the longest first
 public export
-tails1 : (0 _ : IfUnsolved ne True) => Lst1 a -> Lst1 $ Lst ne a
-tails1 xxs = relaxT xxs :: case strengthen $ tail xxs of
-  Nothing => []
-  Just xs => relaxF $ tails1 $ assert_smaller xxs xs
+tails1 : Lst ne a -> Lst ne $ Lst1 a
+tails1 [] = []
+tails1 xxs@(x::xs) = (x::xs) :: case strengthen xs of
+  Nothing  => []
+  Just xs' => relaxF $ tails1 $ assert_smaller xxs xs'
 
 -- Returns the shortest first
 public export
@@ -218,10 +219,9 @@ inits (x::xs) = [] :: ((x::) <$> inits xs)
 
 -- Returns the shortest first
 public export
-inits1 : (0 _ : IfUnsolved ne True) => Lst1 a -> Lst1 $ Lst ne a
-inits1 xxs@(x::xs) = case strengthen xs of
-  Nothing  => [ [x] ]
-  Just xs' => [x] :: ((x::) <$> inits1 (assert_smaller xxs xs'))
+inits1 : Lst ne a -> Lst ne $ Lst1 a
+inits1 []      = []
+inits1 (x::xs) = [x] :: ((x::) <$> inits1 xs)
 
 --- Sublisting ---
 
