@@ -232,6 +232,14 @@ public export
 init' : Lst ne a -> Maybe $ Lst0 a
 init' = map init . strengthen
 
+public export
+unsnoc : Lst1 a -> (Lst0 a, a)
+unsnoc = go [] where
+  go : (rev : Lst0 a) -> Lst1 a -> (Lst0 a, a)
+  go rev xxs@(x::xs) = case strengthen xs of
+    Nothing  => (reverse rev, x)
+    Just xs' => go (x::rev) $ assert_smaller xxs xs'
+
 -- Returns the longest first
 public export
 tails : Lst ne a -> Lst1 $ Lst0 a
