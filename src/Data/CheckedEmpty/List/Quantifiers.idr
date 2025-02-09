@@ -4,6 +4,7 @@
 module Data.CheckedEmpty.List.Quantifiers
 
 import Data.CheckedEmpty.List
+import Data.CheckedEmpty.List.Elem
 
 import Data.DPair
 import Data.Fin
@@ -129,6 +130,11 @@ allNegAny : All (Not . p) xs -> Not (Any p xs)
 allNegAny []         p         = absurd p
 allNegAny (np::npxs) (Here p)  = absurd $ np p
 allNegAny (np::npxs) (There p) = allNegAny npxs p
+
+public export
+indexAll : Elem x xs -> All p xs -> p x
+indexAll  Here     $ p :: _  = p
+indexAll (There e) $ _ :: ps = indexAll e ps
 
 --- Relations between listwise `All` and elementwise `Subset` ---
 
