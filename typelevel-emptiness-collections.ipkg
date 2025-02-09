@@ -10,6 +10,8 @@ builddir = ".build"
 depends = if-unsolved-implicit
 
 modules = Data.CheckedEmpty.List
+        , Data.CheckedEmpty.List.Elem
         , Data.CheckedEmpty.List.Quantifiers
         , Data.CheckedEmpty.List.Lazy
+        , Data.CheckedEmpty.List.Lazy.Elem
         , Data.CheckedEmpty.List.Lazy.Quantifiers
