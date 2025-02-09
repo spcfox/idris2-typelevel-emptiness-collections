@@ -11,7 +11,13 @@ depends = if-unsolved-implicit
 
 modules = Data.CheckedEmpty.List
         , Data.CheckedEmpty.List.Elem
+        , Data.CheckedEmpty.List.Properties
+        , Data.CheckedEmpty.List.Properties.Map
+        , Data.CheckedEmpty.List.Properties.Quantifiers
         , Data.CheckedEmpty.List.Quantifiers
         , Data.CheckedEmpty.List.Lazy
         , Data.CheckedEmpty.List.Lazy.Elem
+        , Data.CheckedEmpty.List.Lazy.Properties
+        , Data.CheckedEmpty.List.Lazy.Properties.Map
+        , Data.CheckedEmpty.List.Lazy.Properties.Quantifiers
         , Data.CheckedEmpty.List.Lazy.Quantifiers
