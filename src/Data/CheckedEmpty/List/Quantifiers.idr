@@ -16,11 +16,9 @@ namespace Any
   public export
   data Any : (0 p : a -> Type) -> Lst ne a -> Type where
 
-    Here  : {0 u0 : _} -> {0 u1 : _} ->
-            p x -> Any p $ (x :: xs) @{u0} @{u1}
+    Here  : {0 xs : _} -> p x -> Any p $ x :: xs
 
-    There : {0 u0 : _} -> {0 u1 : _} ->
-            Any p xs -> Any p $ (x :: xs) @{u0} @{u1}
+    There : Any p xs -> Any p $ x :: xs
 
   export
   Uninhabited (Any p Nil) where
@@ -28,8 +26,8 @@ namespace Any
     uninhabited (There _) impossible
 
   export
-  {0 p : a -> Type} -> {0 u0 : _} -> {0 u1 : _} ->
-  Uninhabited (p x) => Uninhabited (Any p xs) => Uninhabited (Any p $ (x::xs) @{u0} @{u1}) where
+  {0 p : a -> Type} ->
+  Uninhabited (p x) => Uninhabited (Any p xs) => Uninhabited (Any p $ x::xs) where
     uninhabited $ Here  y = uninhabited y
     uninhabited $ There y = uninhabited y
 
@@ -59,12 +57,10 @@ namespace All
   public export
   data All : (0 p : a -> Type) -> Lst ne a -> Type where
     Nil  : All p Nil
-    (::) : {0 u0 : _} -> {0 u1 : _} ->
-           p x -> All p xs -> All p $ (x :: xs) @{u0} @{u1}
+    (::) : {0 xs : _} -> p x -> All p xs -> All p $ x :: xs
 
   export
-  {0 u0 : _} -> {0 u1 : _} ->
-  Either (Uninhabited $ p x) (Uninhabited $ All p xs) => Uninhabited (All p $ (x::xs) @{u0} @{u1}) where
+  Either (Uninhabited $ p x) (Uninhabited $ All p xs) => Uninhabited (All p $ x::xs) where
     uninhabited @{Left  _} (px::pxs) = uninhabited px
     uninhabited @{Right _} (px::pxs) = uninhabited pxs
 

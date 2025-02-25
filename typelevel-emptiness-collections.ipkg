@@ -7,8 +7,6 @@ brief = "Collections with type-level control of emptiness, e.g. generalisation o
 sourcedir = "src"
 builddir = ".build"
 
-depends = if-unsolved-implicit
-
 modules = Data.CheckedEmpty.List
         , Data.CheckedEmpty.List.Elem
         , Data.CheckedEmpty.List.Properties

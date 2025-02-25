@@ -1,3 +1,7 @@
+[idris2]
+url = "https://github.com/spcfox/Idris2"
+commit = "latest:ifunsolved"
+
 [custom.all.typelevel-emptiness-collections]
 type = "local"
 path = "."

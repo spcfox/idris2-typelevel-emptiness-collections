@@ -7,8 +7,6 @@ import Data.List.Lazy
 import Data.Fin
 import Data.Zippable
 
-import public Language.Implicits.IfUnsolved
-
 %default total
 
 --- Types definitions ---
@@ -16,7 +14,7 @@ import public Language.Implicits.IfUnsolved
 public export
 data LazyLst : (definitelyNotEmpty : Bool) -> Type -> Type where
   Nil  : LazyLst False a
-  (::) : (0 _ : True `IfUnsolved` ine) => (0 _ : True `IfUnsolved` ne) =>
+  (::) : {ifUnsolved True 0 ine, ne : Bool} ->
          a -> Lazy (LazyLst ine a) -> LazyLst ne a
 
 %name LazyLst xs, ys, zs
@@ -84,9 +82,9 @@ replicate (S k) x = x :: replicate k x
 covering
 public export
 iterate : (a -> Maybe a) -> a -> LazyLst0 a
-iterate f x = x :: case f x of
+iterate f x = (x :: case f x of
   Nothing => []
-  Just y  => iterate f y
+  Just y  => iterate f y) {ine=False}
 
 covering
 public export
@@ -262,9 +260,9 @@ tails xxs@(x::xs) = relaxF xxs :: tails (assert_smaller xxs xs)
 public export
 tails1 : LazyLst ne a -> LazyLst ne $ LazyLst1 a
 tails1 [] = []
-tails1 xxs@(x::xs) = (x::xs) :: case strengthen xs of
+tails1 xxs@(x::xs) = ((x::xs) :: case strengthen xs of
   Nothing  => []
-  Just xs' => relaxF $ tails1 $ assert_smaller xxs xs'
+  Just xs' => relaxF $ tails1 $ assert_smaller xxs xs') {ine=False}
 
 -- Returns the shortest first
 public export
@@ -308,14 +306,14 @@ public export
 Zippable (LazyLst ne) where
   zipWith _ [] _ = []
   zipWith _ _ [] = []
-  zipWith f xxs@((x::xs) @{_} @{ine}) (y::ys) =
-    (f x y :: zipWith f (assert_smaller xxs $ relaxF xs) (relaxF ys)) @{%search} @{ine}
+  zipWith f xxs@(x::xs) (y::ys) =
+    f x y :: zipWith f (assert_smaller xxs $ relaxF xs) (relaxF ys)
 
   zipWith3 _ [] _ _ = []
   zipWith3 _ _ [] _ = []
   zipWith3 _ _ _ [] = []
-  zipWith3 f xxs@((x::xs) @{_} @{ine}) (y::ys) (z::zs) =
-    (f x y z :: zipWith3 f (assert_smaller xxs $ relaxF xs) (relaxF ys) (relaxF zs)) @{%search} @{ine}
+  zipWith3 f xxs@(x::xs) (y::ys) (z::zs) =
+    (f x y z :: zipWith3 f (assert_smaller xxs $ relaxF xs) (relaxF ys) (relaxF zs))
 
   unzipWith  f xs = (xs <&> fst . f, xs <&> snd . f)
   unzipWith3 f xs = (xs <&> fst . f, xs <&> fst . snd . f, xs <&> snd . snd . f)
@@ -403,12 +401,12 @@ rangeFromThenTo x y z = relaxF $ fromList $ rangeFromThenTo x y z
 
 covering
 public export %inline
-rangeFrom : Range a => (0 _ : IfUnsolved ne True) => a -> LazyLst ne a
+rangeFrom : Range a => {ifUnsolved True 0 ne : _} -> a -> LazyLst ne a
 rangeFrom = relaxT . fromStream . rangeFrom
 
 covering
 public export %inline
-rangeFromThen : Range a => (0 _ : IfUnsolved ne True) => a -> a -> LazyLst ne a
+rangeFromThen : Range a => {ifUnsolved True 0 ne : _} -> a -> a -> LazyLst ne a
 rangeFromThen = relaxT .: fromStream .: rangeFromThen
 
 --- Showing ---
@@ -428,21 +426,19 @@ export
 
 export
 {0 xs : LazyLst _ _} -> {0 uns0 : _} -> {0 uns1 : _} ->
-Uninhabited ([] = (::) @{uns0} @{uns1} x xs) where
+Uninhabited ([] = x :: xs) where
   uninhabited Refl impossible
 
 export
 {0 xs : LazyLst _ _} -> {0 uns0 : _} -> {0 uns1 : _} ->
-Uninhabited ((::) @{uns0} @{uns1} x xs = []) where
+Uninhabited (x  ::xs = []) where
   uninhabited Refl impossible
 
 -- If either head or tail is not propositionally equal, conses are not propositionally equal
 export
 {0 xs : LazyLst _ _} ->
-{0 unsL0 : _} -> {0 unsL1 : _} ->
-{0 unsR0 : _} -> {0 unsR1 : _} ->
 Either (Uninhabited $ x === y) (Uninhabited $ xs === ys) =>
-Uninhabited ((::) @{unsL0} @{unsL1} x xs === (::) @{unsR0} @{unsR1} y ys) where
+Uninhabited (x :: xs === y :: ys) where
   uninhabited @{Left  z} Refl = uninhabited @{z} Refl
   uninhabited @{Right z} Refl = uninhabited @{z} Refl
 

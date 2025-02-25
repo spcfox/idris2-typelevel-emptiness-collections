@@ -19,22 +19,20 @@ import Control.Function
 public export
 data Elem : a -> Lst ne a -> Type where
      ||| A proof that the element is at the head of the list
-     Here : {0 u0 : _} -> {0 u1 : _} -> {0 xs : Lst _ _} ->
-            Elem x $ (x :: xs) {ne} @{u0} @{u1}
+     Here : Elem x $ x :: xs
      ||| A proof that the element is in the tail of the list
-     There : {0 u0 : _} -> {0 u1 : _} -> {0 xs : Lst _ _} ->
-             Elem x xs -> Elem x $ (y :: xs) @{u0} @{u1}
+     There : Elem x xs -> Elem x $ y :: xs
 
 export
-Uninhabited (Here {u0} {u1} {x} {xs} = There {u0=u0'} {u1=u1'} {x=x'} {y} {xs=xs'} e) where
+Uninhabited (Here {x} {xs} = There {x=x'} {y} {xs=xs'} e) where
   uninhabited Refl impossible
 
 export
-Uninhabited (There {u0} {u1} {x} {y} {xs} e = Here {u0=u0'} {u1=u1'} {x=x'} {xs=xs'}) where
+Uninhabited (There{x} {y} {xs} e = Here {x=x'} {xs=xs'}) where
   uninhabited Refl impossible
 
 export
-Injective (There {u0} {u1} {x} {y} {xs}) where
+Injective (There {x} {y} {xs}) where
   injective Refl = Refl
 
 export
@@ -51,7 +49,7 @@ Uninhabited (Elem x []) where
 
 export
 Uninhabited (x = z) => Uninhabited (Elem z xs) =>
-Uninhabited (Elem z $ (x :: xs) @{u0} @{u1}) where
+Uninhabited (Elem z $ x :: xs) where
   uninhabited Here @{xz} = uninhabited Refl @{xz}
   uninhabited $ There y  = uninhabited y
 
@@ -59,7 +57,7 @@ Uninhabited (Elem z $ (x :: xs) @{u0} @{u1}) where
 export
 neitherHereNorThere : {0 xs : Lst ne a} ->
                       Not (x = y) -> Not (Elem x xs) ->
-                      Not (Elem x $ (y :: xs) @{u0} @{u1})
+                      Not (Elem x $ y :: xs)
 neitherHereNorThere xny _    $ Here      = xny Refl
 neitherHereNorThere _   xnxs $ There xxs = xnxs xxs
 
